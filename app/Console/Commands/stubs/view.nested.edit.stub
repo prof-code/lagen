@@ -1,0 +1,8 @@
+@extends('parent_dummy_view.show')
+
+@include('models.children.edit', [
+  'resource_route' => 'dummy_route',
+  'model_variable' => 'dummy_model_variable',
+  'parent' => $parent_dummy_model_variable,
+  'model' => $dummy_model_variable
+])

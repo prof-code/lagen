@@ -1,0 +1,276 @@
+<?php
+
+namespace DummyNamespace;
+
+use DummyFullModelClass;
+use Illuminate\Http\Request;
+use DummyRootNamespaceHttp\Controllers\Controller;
+
+/**
+ * DummyClass
+ */
+class DummyClass extends Controller
+{
+    /**
+     * Relations
+     * @param  \Illuminate\Http\Request|null $request
+     * @param DummyModelClass $dummy_model_variable
+     * @return array
+     */
+    public static function relations(Request $request = null, DummyModelClass $dummy_model_variable = null)
+    {
+        return [
+            'dummy_model_variable' => [
+                'belongsToMany' => [], // also for morphToMany
+                'hasMany' => [
+                    //[ 'name' => 'children', 'label' => ucwords(__('dummy_model_plural_variable.children')) ],
+                ], // also for morphMany, hasManyThrough
+                'hasOne' => [
+                    //[ 'name' => 'child', 'label' => ucwords(__('dummy_model_plural_variable.child')) ],
+                ], // also for morphOne
+            ]
+        ];
+    }
+
+    /**
+     * Visibles
+     * @param  \Illuminate\Http\Request|null $request
+     * @param DummyModelClass $dummy_model_variable
+     * @return array
+     */
+    public static function visibles(Request $request = null, DummyModelClass $dummy_model_variable = null)
+    {
+        return [
+            'index' => [
+                'dummy_model_variable' => [
+                    //[ 'name' => 'parent', 'label' => ucwords(__('dummy_model_plural_variable.parent')), 'column' => 'name' ], // Only support belongsTo, hasOne
+                    [ 'name' => 'name', 'label' => ucwords(__('dummy_model_plural_variable.name')) ],
+                ]
+            ],
+            'show' => [
+                'dummy_model_variable' => [
+                    //[ 'name' => 'parent', 'label' => ucwords(__('dummy_model_plural_variable.parent')), 'column' => 'name' ], // Only support belongsTo, hasOne
+                    [ 'name' => 'name', 'label' => ucwords(__('dummy_model_plural_variable.name')) ],
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Fields
+     * @param  \Illuminate\Http\Request|null $request
+     * @param DummyModelClass $dummy_model_variable
+     * @return array
+     */
+    public static function fields(Request $request = null, DummyModelClass $dummy_model_variable = null)
+    {
+        return [
+            'create' => [
+                'dummy_model_variable' => [
+                    //[ 'field' => 'select', 'name' => 'parent_id', 'label' => ucwords(__('dummy_model_plural_variable.parent')), 'required' => true, 'options' => \App\Parent::filter()->get()->map(function ($parent) {
+                    //    return [ 'value' => $parent->id, 'text' => $parent->name ];
+                    //})->prepend([ 'value' => '', 'text' => '-' ])->toArray() ],
+                    [ 'field' => 'input', 'type' => 'text', 'name' => 'name', 'label' => ucwords(__('dummy_model_plural_variable.name')), 'required' => true ],
+                ]
+            ],
+            'edit' => [
+                'dummy_model_variable' => [
+                    //[ 'field' => 'select', 'name' => 'parent_id', 'label' => ucwords(__('dummy_model_plural_variable.parent')), 'options' => \App\Parent::filter()->get()->map(function ($parent) {
+                    //    return [ 'value' => $parent->id, 'text' => $parent->name ];
+                    //})->prepend([ 'value' => '', 'text' => '-' ])->toArray() ],
+                    [ 'field' => 'input', 'type' => 'text', 'name' => 'name', 'label' => ucwords(__('dummy_model_plural_variable.name')) ],
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Rules
+     * @param  \Illuminate\Http\Request|null $request
+     * @param DummyModelClass $dummy_model_variable
+     * @return array
+     */
+    public static function rules(Request $request = null, DummyModelClass $dummy_model_variable = null)
+    {
+        return [
+            'store' => [
+                //'parent_id' => 'required|exists:parents,id',
+                'name' => 'required|string|max:255',
+            ],
+            'update' => [
+                //'parent_id' => 'exists:parents,id',
+                'name' => 'string|max:255',
+            ]
+        ];
+    }
+
+    /**
+    * Instantiate a new controller instance.
+    *
+    * @return void
+    */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function index()
+    {
+        $dummy_model_plural_variable = DummyModelClass::filter()
+            ->paginate()->appends(request()->query());
+        $this->authorize('index', 'DummyFullModelClass');
+
+        return response()->view('dummy_view.index', [
+            'dummy_model_plural_variable' => $dummy_model_plural_variable,
+            'relations' => self::relations(request()),
+            'visibles' => self::visibles(request())['index']
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function create()
+    {
+        $this->authorize('create', 'DummyFullModelClass');
+
+        return response()->view('dummy_view.create', [
+            'fields' => self::fields(request())['create']
+        ]);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function store(Request $request)
+    {
+        $this->authorize('create', 'DummyFullModelClass');
+        $request->validate(self::rules($request)['store']);
+
+        $dummy_model_variable = new DummyModelClass;
+        foreach (self::rules($request)['store'] as $key => $value) {
+            if (str_contains($value, [ 'file', 'image', 'mimetypes', 'mimes' ])) {
+                if ($request->hasFile($key)) {
+                    $dummy_model_variable->{$key} = $request->file($key)->store('dummy_model_plural_variable');
+                } elseif ($request->exists($key)) {
+                    $dummy_model_variable->{$key} = $request->{$key};
+                }
+            } elseif ($request->exists($key)) {
+                $dummy_model_variable->{$key} = $request->{$key};
+            }
+        }
+        $dummy_model_variable->save();
+
+        if (request()->filled('redirect') && starts_with(request()->redirect, request()->root()))
+            $response = response()->redirectTo(request()->redirect);
+        else
+            $response = response()->redirectToRoute('dummy_route.show', $dummy_model_variable->getKey());
+
+        return $response->withInput([ $dummy_model_variable->getForeignKey() => $dummy_model_variable->getKey() ])
+            ->with('status', __('Success'));
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param DummyModelClass $dummy_model_variable
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function show(DummyModelClass $dummy_model_variable)
+    {
+        $this->authorize('view', $dummy_model_variable);
+
+        return response()->view('dummy_view.show', [
+            'dummy_model_variable' => $dummy_model_variable,
+            'relations' => self::relations(request(), $dummy_model_variable),
+            'visibles' => self::visibles(request(), $dummy_model_variable)['show'],
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param DummyModelClass $dummy_model_variable
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function edit(DummyModelClass $dummy_model_variable)
+    {
+        $this->authorize('update', $dummy_model_variable);
+
+        return response()->view('dummy_view.edit', [
+            'dummy_model_variable' => $dummy_model_variable,
+            'fields' => self::fields(request(), $dummy_model_variable)['edit']
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param DummyModelClass $dummy_model_variable
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function update(Request $request, DummyModelClass $dummy_model_variable)
+    {
+        $this->authorize('update', $dummy_model_variable);
+        $request->validate(self::rules($request, $dummy_model_variable)['update']);
+
+        foreach (self::rules($request, $dummy_model_variable)['update'] as $key => $value) {
+            if (str_contains($value, [ 'file', 'image', 'mimetypes', 'mimes' ])) {
+                if ($request->hasFile($key)) {
+                    $dummy_model_variable->{$key} = $request->file($key)->store('dummy_model_plural_variable');
+                } elseif ($request->exists($key)) {
+                    $dummy_model_variable->{$key} = $request->{$key};
+                }
+            } elseif ($request->exists($key)) {
+                $dummy_model_variable->{$key} = $request->{$key};
+            }
+        }
+        $dummy_model_variable->save();
+
+        if (request()->filled('redirect') && starts_with(request()->redirect, request()->root()))
+            $response = response()->redirectTo(request()->redirect);
+        else
+            $response = response()->redirectToRoute('dummy_route.show', $dummy_model_variable->getKey());
+
+        return $response->withInput([ $dummy_model_variable->getForeignKey() => $dummy_model_variable->getKey() ])
+            ->with('status', __('Success'));
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param DummyModelClass $dummy_model_variable
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     * @throws \Exception
+     */
+    public function destroy(DummyModelClass $dummy_model_variable)
+    {
+        $this->authorize('delete', $dummy_model_variable);
+        $dummy_model_variable->delete();
+
+        if (request()->filled('redirect') && starts_with(request()->redirect, request()->root()) && !str_contains(request()->redirect, '/dummy_route/'.$dummy_model_variable->getKey()))
+            $response = response()->redirectTo(request()->redirect);
+        else
+            $response = response()->redirectToRoute('dummy_route.index');
+
+        return $response->with('status', __('Success'));
+    }
+}
