@@ -7,7 +7,7 @@
     "require": {
         "php": ">=7.0",
         "atnic/eloquent-filters": "^2.2",
-        "laravel/framework": ">=5.5",
+        "laravel/framework": ">=8.0",
         "laravel/passport": ">=4.0",
         "propaganistas/laravel-intl": ">=2.1",
         "propaganistas/laravel-phone": "^4.2"
